@@ -1,59 +1,61 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage.ts'; // Импортируем классы
-import { InventoryPage } from '../pages/InventoryPage.ts';
-import { SidebarMenu } from '../pages/SidebarMenu.ts';
+import { test, expect } from '../fixtures/login.fixture.ts';
 
-// Список пользователей
-const users = [
-    { username: 'standard_user', password: 'secret_sauce' },
-    { username: 'visual_user', password: 'secret_sauce' },
-    { username: 'problem_user', password: 'secret_sauce' },
-    { username: 'performance_glitch_user', password: 'secret_sauce' },
-    { username: 'error_user', password: 'secret_sauce' },
-];
+const TEST_USERS = {
+    STANDARD: { username: 'standard_user', password: 'secret_sauce' },
+    LOCKED: { username: 'locked_out_user', password: 'secret_sauce' },
+    PERFORMANCE: { username: 'performance_glitch_user', password: 'secret_sauce' },
+    PROBLEM: { username: 'problem_user', password: 'secret_sauce' },
+    ERROR: { username: 'error_user', password: 'secret_sauce' },
+    VISUAL: { username: 'visual_user', password: 'secret_sauce' }
+};
 
 test.describe('Тестирование авторизации', () => {
-    let loginPage: LoginPage;
-    let inventoryPage: InventoryPage;
-    let sidebarMenu: SidebarMenu;
-
-    test.beforeEach(async ({ page }) => {
-        loginPage = new LoginPage(page);   // Создаем экземпляры наших объектов
-        inventoryPage = new InventoryPage(page);
-        sidebarMenu = new SidebarMenu(page);
-        
-        await loginPage.goto();           // Переходим на главную страницу
+    test('Проверка блокировки пользователя', async ({ loginPage }) => {
+        await loginPage.login(TEST_USERS.LOCKED.username, TEST_USERS.LOCKED.password);
+        await loginPage.checkErrorMessage('Epic sadface: Sorry, this user has been locked out.');
     });
 
-    test('Проверка блокировки пользователя', async () => {
-        await loginPage.fillUsername('locked_out_user');      // Заполняем форму
-        await loginPage.fillPassword('secret_sauce');
-        await loginPage.submitLoginForm();                   // Отправляем форму
-        await loginPage.checkErrorMessage('Epic sadface: Sorry, this user has been locked out.'); // Проверяем сообщение об ошибке
+    test('Успешная авторизация стандартного пользователя', async ({ 
+        loginPage, 
+        inventoryPage, 
+        sidebarMenu 
+    }) => {
+        await loginPage.login(TEST_USERS.STANDARD.username, TEST_USERS.STANDARD.password);
+        await inventoryPage.verifyIsOnInventoryPage();
+        await sidebarMenu.logout();
+        await expect(loginPage.page).toHaveURL('https://www.saucedemo.com/');
     });
 
-    for (const user of users) {
-        test(`Авторизация как ${user.username}`, async () => {
-            try {
-                await loginPage.fillUsername(user.username);     // Используем объект страницы для заполнения формы
-                await loginPage.fillPassword(user.password);
-                await loginPage.submitLoginForm();
+    test('Авторизация пользователя с проблемами', async ({ loginPage, inventoryPage }) => {
+        await loginPage.login(TEST_USERS.PROBLEM.username, TEST_USERS.PROBLEM.password);
+        await inventoryPage.verifyIsOnInventoryPage();
+    });
 
-                // Ждем загрузки основной страницы товаров
-                await inventoryPage.verifyIsOnInventoryPage();
+    test('Авторизация пользователя с задержкой', async ({ loginPage, inventoryPage }) => {
+        await loginPage.login(TEST_USERS.PERFORMANCE.username, TEST_USERS.PERFORMANCE.password);
+        await inventoryPage.verifyIsOnInventoryPage();
+    });
 
-                // Для performance_glitch_user добавляем задержку
-                if (user.username === 'performance_glitch_user') {
-                    await new Promise((resolve) => setTimeout(resolve, 3000)); // Эмулируем задержку
-                }
+    test('Авторизация визуального пользователя', async ({ loginPage, inventoryPage }) => {
+        await loginPage.login(TEST_USERS.VISUAL.username, TEST_USERS.VISUAL.password);
+        await inventoryPage.verifyIsOnInventoryPage();
+    });
 
-                // Выполняем выход из системы
-                await sidebarMenu.logout();
-                await expect(loginPage.page).toHaveURL('https://www.saucedemo.com/'); // Проверяем возвращение на стартовую страницу
-            } catch (err) {
-                console.error(`Ошибка при входе как ${user.username}:`, err.message);
-            }
-        });
-    }
+    test('Авторизация проблемного пользователя', async ({ loginPage, inventoryPage }) => {
+        await loginPage.login(TEST_USERS.ERROR.username, TEST_USERS.ERROR.password);
+        await inventoryPage.verifyIsOnInventoryPage();
+    });
 });
 
+test.describe('Тесты с предварительной авторизацией', () => {
+    test('Проверка наличия элементов после авторизации', async ({ authenticatedPage }) => {
+        const { inventoryPage } = authenticatedPage;
+        await inventoryPage.verifyIsOnInventoryPage();
+    });
+
+    test('Проверка выхода из системы', async ({ authenticatedPage }) => {
+        const { page, sidebarMenu } = authenticatedPage;
+        await sidebarMenu.logout();
+        await expect(page).toHaveURL('https://www.saucedemo.com/');
+    });
+});
