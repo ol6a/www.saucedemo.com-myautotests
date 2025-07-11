@@ -24,15 +24,15 @@ export class LoginPage {
         await this.page.click('[data-test="login-button"]');
     }
 
-    async checkErrorMessage(message: string): Promise<void> {
-        const errorElement = this.page.locator('h3[data-test="error"]');
-        await expect(errorElement).toBeVisible({ timeout: 5000 });
-        await expect(errorElement).toContainText(message);
-    }
-
     async login(username: string, password: string): Promise<void> {
         await this.fillUsername(username);
         await this.fillPassword(password);
         await this.submitLoginForm();
+    }
+
+    async checkErrorMessage(message: string): Promise<void> {
+        const errorElement = this.page.locator('h3[data-test="error"]');
+        await expect(errorElement).toBeVisible({ timeout: 5000 });
+        await expect(errorElement).toContainText(message);
     }
 }
