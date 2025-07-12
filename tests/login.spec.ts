@@ -1,4 +1,5 @@
-import { test, expect } from '../fixtures/login.fixture.ts';
+//import { test, expect } from '../fixtures/login.fixture.ts';
+import { test, expect } from '../fixtures/index.ts';
 const BASE_URL = 'https://www.saucedemo.com/';
 const TEST_USERS = {
     STANDARD: { username: 'standard_user', password: 'secret_sauce' },
