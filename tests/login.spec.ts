@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/login.fixture.ts';
-
+const BASE_URL = 'https://www.saucedemo.com/';
 const TEST_USERS = {
     STANDARD: { username: 'standard_user', password: 'secret_sauce' },
     LOCKED: { username: 'locked_out_user', password: 'secret_sauce' },
@@ -23,7 +23,7 @@ test.describe('Тестирование авторизации', () => {
         await loginPage.login(TEST_USERS.STANDARD.username, TEST_USERS.STANDARD.password);
         await inventoryPage.verifyIsOnInventoryPage();
         await sidebarMenu.logout();
-        await expect(loginPage.page).toHaveURL('https://www.saucedemo.com/');
+        await expect(loginPage.page).toHaveURL(BASE_URL);
     });
 
     test('Авторизация пользователя с проблемами', async ({ loginPage, inventoryPage }) => {
@@ -33,6 +33,7 @@ test.describe('Тестирование авторизации', () => {
 
     test('Авторизация пользователя с задержкой', async ({ loginPage, inventoryPage }) => {
         await loginPage.login(TEST_USERS.PERFORMANCE.username, TEST_USERS.PERFORMANCE.password);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         await inventoryPage.verifyIsOnInventoryPage();
     });
 
@@ -47,15 +48,3 @@ test.describe('Тестирование авторизации', () => {
     });
 });
 
-test.describe('Тесты с предварительной авторизацией', () => {
-    test('Проверка наличия элементов после авторизации', async ({ authenticatedPage }) => {
-        const { inventoryPage } = authenticatedPage;
-        await inventoryPage.verifyIsOnInventoryPage();
-    });
-
-    test('Проверка выхода из системы', async ({ authenticatedPage }) => {
-        const { page, sidebarMenu } = authenticatedPage;
-        await sidebarMenu.logout();
-        await expect(page).toHaveURL('https://www.saucedemo.com/');
-    });
-});

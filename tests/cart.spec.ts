@@ -26,13 +26,22 @@ test.describe('Тестирование корзины', () => {
 
     test('Проверка содержимого корзины', async ({ authenticatedPage }) => {
         const { inventoryPage, cartPage } = authenticatedPage;
+        
+        // Добавляем товары
         await inventoryPage.addItemToCart('Sauce Labs Fleece Jacket');
         await inventoryPage.addItemToCart('Sauce Labs Onesie');
+        
+        // Проверяем количество товаров в корзине
         await cartPage.verifyCartItemsCount(2);
+        
+        // Переходим в корзину
         await cartPage.goto();
-        await expect(cartPage.page.locator('.cart_item')).toHaveCount(2);
-        await expect(cartPage.page.locator('.cart_item', { hasText: 'Sauce Labs Fleece Jacket' })).toBeVisible();
-        await expect(cartPage.page.locator('.cart_item', { hasText: 'Sauce Labs Onesie' })).toBeVisible();
+        
+        // Проверяем содержимое корзины
+        await cartPage.verifyCartContainsItems([
+            'Sauce Labs Fleece Jacket',
+            'Sauce Labs Onesie'
+        ]);
     });
 
     test('Продолжение покупок из корзины', async ({ authenticatedPage }) => {

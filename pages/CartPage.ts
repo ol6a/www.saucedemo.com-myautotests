@@ -2,6 +2,11 @@ import { expect, Page } from "@playwright/test";
 
 export class CartPage {
     readonly page: Page;
+    
+    // Локаторы
+    private readonly cartItems = () => this.page.locator('.cart_item');
+    private readonly cartItem = (itemName: string) => this.page.locator('.cart_item', { hasText: itemName });
+    private readonly cartBadge = () => this.page.locator('.shopping_cart_badge');
 
     constructor(page: Page) {
         this.page = page;
@@ -18,8 +23,9 @@ export class CartPage {
     }
 
     async getCartItemsCount() {
-        const badge = this.page.locator('.shopping_cart_badge');
-        return await badge.isVisible() ? parseInt(await badge.textContent() || '0') : 0;
+        return await this.cartBadge().isVisible() 
+            ? parseInt(await this.cartBadge().textContent() || '0') 
+            : 0;
     }
 
     async verifyCartItemsCount(expectedCount: number) {
@@ -27,10 +33,16 @@ export class CartPage {
         expect(actualCount).toBe(expectedCount);
     }
 
+    async verifyCartContainsItems(itemNames: string[]) {
+        await expect(this.cartItems()).toHaveCount(itemNames.length);
+        for (const itemName of itemNames) {
+            await expect(this.cartItem(itemName)).toBeVisible();
+        }
+    }
+
     async removeItemFromCart(itemName: string) {
-        const item = this.page.locator('.cart_item', { hasText: itemName });
-        await item.locator('button').click();
-        await expect(item).not.toBeVisible();
+        await this.cartItem(itemName).locator('button').click();
+        await expect(this.cartItem(itemName)).not.toBeVisible();
     }
 
     async continueShopping() {
